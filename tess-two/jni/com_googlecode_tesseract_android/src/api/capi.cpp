@@ -451,12 +451,12 @@ TESS_API TessMutableIterator* TESS_CALL TessBaseAPIGetMutableIterator(TessBaseAP
 
 TESS_API char* TESS_CALL TessBaseAPIGetUTF8Text(TessBaseAPI* handle)
 {
-    return handle->GetUTF8Text();
+    return handle->GetUTF8Text(NULL);
 }
 
 TESS_API char* TESS_CALL TessBaseAPIGetHOCRText(TessBaseAPI* handle, int page_number)
 {
-    return handle->GetHOCRText(page_number);
+    return handle->GetHOCRText(page_number, NULL);
 }
 
 TESS_API char* TESS_CALL TessBaseAPIGetBoxText(TessBaseAPI* handle, int page_number)
@@ -687,7 +687,7 @@ TESS_API const TessPageIterator* TESS_CALL TessResultIteratorGetPageIteratorCons
     return handle;
 }
 
-TESS_API const TessChoiceIterator* TESS_CALL TessResultIteratorGetChoiceIterator(const TessResultIterator* handle)
+TESS_API TessChoiceIterator* TESS_CALL TessResultIteratorGetChoiceIterator(const TessResultIterator* handle)
 {
     return new TessChoiceIterator(*handle);
 }

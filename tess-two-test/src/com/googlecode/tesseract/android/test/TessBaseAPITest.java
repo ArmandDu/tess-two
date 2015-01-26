@@ -28,8 +28,11 @@ import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.test.suitebuilder.annotation.SmallTest;
+import android.util.Log;
+import android.util.Pair;
 
 import java.io.File;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -48,6 +51,27 @@ public class TessBaseAPITest extends TestCase {
         // Attempt to initialize the API.
         final TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+    }
+
+    @SmallTest
+    public void testSetPageSegMode() {
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+
+        // Check the default page segmentation mode.
+        final int defaultPageSegMode = TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK;
+        assertEquals("Found unexpected default page segmentation mode.", 
+                baseApi.getPageSegMode(), defaultPageSegMode);
+
+        // Ensure that the page segmentation mode can be changed.
+        final int newPageSegMode = TessBaseAPI.PageSegMode.PSM_SINGLE_CHAR;
+        baseApi.setPageSegMode(newPageSegMode);
+        assertEquals("Found unexpected page segmentation mode.", 
+                baseApi.getPageSegMode(), newPageSegMode);
 
         // Attempt to shut down the API.
         baseApi.end();
@@ -109,15 +133,19 @@ public class TessBaseAPITest extends TestCase {
 
         // Ensure that getHOCRText() produced a result.
         final String hOcr = baseApi.getHOCRText(0);
-        assertNotNull("HOCR result found", hOcr);
+        assertNotNull("HOCR result not found.", hOcr);
         
         // Ensure getRegions() works.
         final Pixa regions = baseApi.getRegions();
-        assertEquals("Found one region", regions.size(), 1);
+        assertEquals("Found incorrect number of regions.", regions.size(), 1);
 
         // Ensure getWords() works.
         final Pixa words = baseApi.getWords();
-        assertEquals("Found one word", words.size(), 1);
+        assertEquals("Found incorrect number of words.", words.size(), 1);
+
+        // Ensure getConnectedComponents() works.
+        final Pixa connectedComponents = baseApi.getConnectedComponents();
+        assertTrue("Connected components not found.", connectedComponents.size() > 0);
 
         // Iterate through the results.
         final ResultIterator iterator = baseApi.getResultIterator();
@@ -133,10 +161,71 @@ public class TessBaseAPITest extends TestCase {
             count++;
         } while (iterator.next(PageIteratorLevel.RIL_WORD));
 
-        assertEquals("Found only one result", count, 1);
-        assertEquals("Found the correct result", lastUTF8Text, outputText);
-        assertTrue("Result was high-confidence", lastConfidence > 80);
-        assertTrue("Result has a bounding box", lastBoundingBox[2] > 0 && lastBoundingBox[3] > 0);
+        assertEquals("Found incorrect number of results.", count, 1);
+        assertEquals("Found an incorrect result.", lastUTF8Text, outputText);
+        assertTrue("Result was not high-confidence.", lastConfidence > 80);
+        assertTrue("Result bounding box not found.", lastBoundingBox[2] > 0 && lastBoundingBox[3] > 0);
+
+        // Attempt to shut down the API.
+        baseApi.end();
+        bmp.recycle();
+    }
+
+    @SmallTest
+    public void testSetVariable() {
+        final String inputText = "hello";
+        final Bitmap bmp = getTextImage(inputText, 640, 480);
+
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.init(TESSBASE_PATH, DEFAULT_LANGUAGE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+
+        // Ensure that setting the blacklist variable works.
+        final String blacklistedCharacter = inputText.substring(1, 2);
+        baseApi.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, blacklistedCharacter);
+        baseApi.setImage(bmp);
+        final String outputText = baseApi.getUTF8Text();
+        assertFalse("Found a blacklisted character.", outputText.contains(blacklistedCharacter));
+
+        // Attempt to shut down the API.
+        baseApi.end();
+        bmp.recycle();
+    }
+
+    @SmallTest
+    public void testChoiceIterator() {
+        final String inputText = "hello";
+        final Bitmap bmp = TessBaseAPITest.getTextImage(inputText, 640, 480);
+
+        // Attempt to initialize the API.
+        final TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.init(TessBaseAPITest.TESSBASE_PATH, TessBaseAPITest.DEFAULT_LANGUAGE);
+        baseApi.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+        baseApi.setVariable(TessBaseAPI.VAR_SAVE_BLOB_CHOICES, TessBaseAPI.VAR_TRUE);
+
+        // Ensure that text is recognized.
+        baseApi.setImage(bmp);
+        String recognizedText = baseApi.getUTF8Text();
+        assertTrue("No recognized text found.", recognizedText != null && !recognizedText.equals(""));
+
+        // Iterate through the results.
+        ResultIterator iterator = baseApi.getResultIterator();
+        List<Pair<String, Double>> choicesAndConfidences;
+        iterator.begin();
+        do {
+            choicesAndConfidences = iterator.getChoicesAndConfidence(PageIteratorLevel.RIL_SYMBOL);
+            assertNotNull("Invalid result.", choicesAndConfidences);
+
+            for (Pair<String, Double> choiceAndConfidence : choicesAndConfidences) {
+                String choice = choiceAndConfidence.first;
+                Double conf = choiceAndConfidence.second;
+                assertTrue("No choice value found.", choice != null && !choice.equals(""));
+                assertTrue("Found an incorrect confidence value.", conf >= 0 && conf <= 100);
+            }
+        } while (iterator.next(PageIteratorLevel.RIL_SYMBOL));
+
+        assertNotNull("No ChoiceIterator values found.", choicesAndConfidences);
 
         // Attempt to shut down the API.
         baseApi.end();

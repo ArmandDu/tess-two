@@ -579,14 +579,14 @@ class TESS_API TessBaseAPI {
    * The recognized text is returned as a char* which is coded
    * as UTF8 and must be freed with the delete [] operator.
    */
-  char* GetUTF8Text();
+  char* GetUTF8Text(ETEXT_DESC* monitor);
 
   /**
    * Make a HTML-formatted string with hOCR markup from the internal
    * data structures.
    * page_number is 0-based but will appear in the output as 1-based.
    */
-  char* GetHOCRText(int page_number);
+  char* GetHOCRText(int page_number, ETEXT_DESC* monitor);
 
   /**
    * The recognized text is returned as a char* which is coded in the same
@@ -656,6 +656,9 @@ class TESS_API TessBaseAPI {
    * in a separate API at some future time.
    */
   int IsValidWord(const char *word);
+  // Returns true if utf8_character is defined in the UniCharset.
+  bool IsValidCharacter(const char *utf8_character);
+
 
   bool GetTextDirection(int* out_offset, float* out_slope);
 

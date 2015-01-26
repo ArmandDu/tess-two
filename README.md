@@ -5,8 +5,8 @@ A fork of Tesseract Tools for Android ([tesseract-android-tools](http://code.goo
 additional functions. Tesseract Tools for Android is a set of Android APIs and
 build files for the [Tesseract OCR](https://code.google.com/p/tesseract-ocr/) and [Leptonica](http://www.leptonica.com/) image processing libraries.
 
-This project works with Tesseract v3.04. The required source code for Tesseract 3.04 and
-Leptonica 1.71 is included within the `tess-two/jni` folder.
+This project works with Tesseract pre-release v3.04 and Leptonica v1.71. The required source code for Tesseract and
+Leptonica is included within the `tess-two/jni` folder.
 
 The `tess-two` subdirectory contains tools for compiling the Tesseract and Leptonica
 libraries for use on the Android platform. It contains an Android
@@ -24,7 +24,7 @@ eyes-two
 The `eyes-two` subdirectory contains a second, separate library project with additional image 
 processing code copied from the [eyes-free project](http://code.google.com/p/eyes-free/) without 
 modifications. It includes native functions for text detection, blurriness detection, optical flow 
-detection, and thresholding. Building eyes-two is not necessary for using the Tesseract API.
+detection, and thresholding. Building eyes-two is not necessary for using the Tesseract or Leptonica APIs.
 
 While I haven't tested all the Eyes-two code, I've bundled it in this project alongside tess-two for
 convenience due to its dependency on Leptonica. 
